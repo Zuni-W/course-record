@@ -1,0 +1,64 @@
+## crypto analysis
+
+Project : Find a key with hash value “ sdu _ cst _20220610” under a message composed of your name folowed by your student ID . For example ,“ San Zhan 202000460001”.
+
+Project : Find a 64-byte message under some k fulfilling that their hash value is symmetrical .
+
+## bitcoin
+
+Project:research report on MPT
+
+*Project:send a tx on Bitcoin testnet,and parse the tx data down to everybit,better write script yourself
+
+*Project:forge a signature to pretend that you are Satoshi
+
+*Project:report on the application of this deduce technique in Ethereum with ECDSA
+
+*Project:verify the above pit falls with proof-of-concept code
+
+## SM2
+
+*Project : impl sm2 with RFC6979
+
+*Project:Implement the above ECMH scheme Decrypt
+
+*Project:Implement a PGP scheme with SM2
+
+*Project:implement sm2 2P sign with real network communication
+
+*Project:implement sm2 2P decrypt with real network communication
+
+## SM4
+Experimenting linear cryptanalysis of DES
+
+Survey of AES implementation software impl
+
+Survey of GCM , nonce reuse resistant , GCM - SIV · Survey of TLS Weakness 
+
+The protocol itself : CRIME etc .
+
+The implementation : HeartBleed , CBC related stuff 
+
+The configuration : DROWN 
+
+The PKI system : WoSign accident
+
+## SM3
+
+•Project:implement the naïve birthday attack of reduced SM3
+
+•Project:implement the Rho method of reduced SM3
+
+•*The longer collision you can find,the higher score
+
+*Project:implement length extension attack for SM3,SHA256,etc.
+
+*Project:do your best to optimize SM3 implementation(software)
+
+*Project:Impl Merkle Tree following RFC6962
+•Construct a Merkle tree with 10w leaf nodes
+•Build inclusion proof for specified element
+•Build exclusion proof for specified element
+
+*Project:Try to Implement this-Generalizing Hash Chains
+
