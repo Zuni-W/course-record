@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include <stdint.h>
 unsigned char S[256] = {             // S盒
 	0x63,0x7C,0x77,0x7B,0xF2,0x6B,0x6F,0xC5,0x30,0x01,0x67,0x2B,0xFE,0xD7,0xAB,0x76,
 	0xCA,0x82,0xC9,0x7D,0xFA,0x59,0x47,0xF0,0xAD,0xD4,0xA2,0xAF,0x9C,0xA4,0x72,0xC0,    
@@ -80,28 +81,6 @@ void keygen(unsigned char key[16],unsigned char round_key[11][16]){
     }
 }
 /*
-void InvMixColumns(unsigned char *a)   
-{
-	unsigned char b[16];
-	b[0] = MulE(tmp[0]) ^ MulB(tmp[1]) ^ MulD(tmp[2]) ^ Mul9(tmp[3]);
-	b[1] = MulE(tmp[1]) ^ MulB(tmp[2]) ^ MulD(tmp[3]) ^ Mul9(tmp[0]);
-	b[2] = MulE(tmp[2]) ^ MulB(tmp[3]) ^ MulD(tmp[0]) ^ Mul9(tmp[1]);
-	b[3] = MulE(tmp[3]) ^ MulB(tmp[0]) ^ MulD(tmp[1]) ^ Mul9(tmp[2]);
-	b[4] = MulE(tmp[4]) ^ MulB(tmp[5]) ^ MulD(tmp[6]) ^ Mul9(tmp[7]);
-	b[5] = MulE(tmp[5]) ^ MulB(tmp[6]) ^ MulD(tmp[7]) ^ Mul9(tmp[4]);
-	b[6] = MulE(tmp[6]) ^ MulB(tmp[7]) ^ MulD(tmp[4]) ^ Mul9(tmp[5]);
-	b[7] = MulE(tmp[7]) ^ MulB(tmp[4]) ^ MulD(tmp[5]) ^ Mul9(tmp[6]);
-	b[8] = MulE(tmp[8]) ^ MulB(tmp[9]) ^ MulD(tmp[10]) ^ Mul9(tmp[11]);
-	b[9] = MulE(tmp[9]) ^ MulB(tmp[10]) ^ MulD(tmp[11]) ^ Mul9(tmp[8]);
-	b[10] = MulE(tmp[10]) ^ MulB(tmp[11]) ^ MulD(tmp[8]) ^ Mul9(tmp[9]);
-	b[11] = MulE(tmp[11]) ^ MulB(tmp[8]) ^ MulD(tmp[9]) ^ Mul9(tmp[10]);
-	b[12] = MulE(tmp[12]) ^ MulB(tmp[13]) ^ MulD(tmp[14]) ^ Mul9(tmp[15]);
-	b[13] = MulE(tmp[13]) ^ MulB(tmp[14]) ^ MulD(tmp[15]) ^ Mul9(tmp[12]);
-	b[14] = MulE(tmp[14]) ^ MulB(tmp[15]) ^ MulD(tmp[12]) ^ Mul9(tmp[13]);
-	b[15] = MulE(tmp[15]) ^ MulB(tmp[12]) ^ MulD(tmp[13]) ^ Mul9(tmp[14]);
-	for (int i = 0; i < 16; i++)
-		a[i] = b[i];
-}
 */
 void AES_enc(unsigned char round_key[11][16],
              unsigned char plaintext[16],
@@ -213,11 +192,23 @@ void AES_dec(unsigned char round_key[11][16],
 
 }
 
-    unsigned char key[16]={1,0};
-    unsigned char in[16]={1,2,3,4,0};
+    unsigned char key[16]={0x66,0xe9,0x4b,0xd4,
+                           0xef,0x8a,0x2c,0x3b,
+                           0x88,0x4c,0xfa,0x59,
+                           0xca,0x34,0x2b,0x2e
+                           };
+    unsigned char in[16]={0xff,0,0,0,0};
     unsigned char out[16]={0};
-void inc32(unsigned char a)
+void inc32(unsigned char *a)
 {
+    a[15]+=1;
+    for(int i=15;i>=13;i--)
+    {
+        if (a[i]==0)
+        a[i-1]+=1;
+        else
+            break;
+    }
     return;
 }
 void GCTR(unsigned char key[16],int byteslen,unsigned char nonce[16],
@@ -235,38 +226,111 @@ void GCTR(unsigned char key[16],int byteslen,unsigned char nonce[16],
     }
 
 }
-void mul(unsigned char *a,unsigned char* b);
-void GHASH(unsigned char *text,int len,unsigned char* H,unsigned char ans[16])
+void mul(unsigned char *a,unsigned char* b,unsigned char* c)
 {
-    for(int i=0;i<16;i++)ans[i]=0;
+    __uint128_t  m1,m2,ans=0;
+    unsigned char *pm1=&m1,*pm2=&m2;
+    for(int i=0;i<16;i++)
+    {
+        pm1[i]=a[i];
+        pm2[i]=b[i];
+    }
+    while(m2)
+    {
+        if(pm2[0]&0x1)
+        {
+            ans^=m1;
+        }
+        if(pm1[15]&0x80)
+        {
+            m1<<=1;
+            m1^=0xe1;
+        }
+        else 
+            m1<<=1;
+        m2>>=1;    
+    }
+    unsigned char *pa=&ans;
+    for(int i=0;i<15;i++)
+    {
+        c[i]=pa[i];
+    }
+
+}
+unsigned char ans[16]={0x38,0x4C,0x3C,0xED,
+                       0xE5,0xCB,0xC5,0x56,
+                       0x0F,0x00,0x2F,0x94,
+                       0xA8,0xE4,0x20,0x5A};
+unsigned char H[16]={  0x00,0xBA,0x5F,0x76,
+                       0xF3,0xD8,0x98,0x2B,
+                       0x19,0x99,0x20,0xE3,
+                       0x22,0x1E,0xD0,0x5F,    
+                       }                 ; 
+unsigned char text[448/8]={               
+0x3B,0xEA,0x33,0x21 ,                     
+0xBD,0xA9,0xEB,0xF0 ,                     
+0x2D,0x54,0x59,0xBC ,                     
+0xE4,0x29,0x5E,0x3A ,                     
+0xAE,0xF1,0xD4,0xE4 ,                     
+0xF5,0xF8,0x42,0x0A ,                     
+0x9E,0x22,0xF9,0x34 ,                     
+0x5E,0x0E,0x8F,0xD2 ,                     
+0xFE,0xAD,0xCD,0xA5 ,
+0x6F,0xFB,0x35,0x62 ,
+0xD5,0xB7,0xAC,0x58 ,
+0xDA,0x55,0x0D,0x52 ,
+0x43,0xBF,0xD6,0xD4 ,
+0x3E,0x00,0x27,0x05 ,
+};
+void GHASH(unsigned char *text,int len,unsigned char H[16],unsigned char ans[16])
+{
+    //for(int i=0;i<16;i++)ans[i]=0;
     for(int i=0;i<len;i+=16)
     {
         for(int j=0;j+i<len&&j<16;j++)
         {
             ans[j]^=text[j+i];
         }
-        mul(ans,H);
+        mul(ans,H,ans);
+    for(int i=0;i<16;i++)
+    {
+        printf("%02x ",ans[i]);
+    }
+    printf("\n");
     }
 }
 
 void AES_GCM(unsigned char *AAD,int AADlen,
              unsigned char* plaintext,int textlen,
              unsigned char *tag,int taglen,
-             unsigned char nonce,int noncelen)
+             unsigned char *nonce,int noncelen)
 {
     if(noncelen==12)
     {
-        //J0=nonce;
+       nonce[15]==1;
     }
     else
     {
-      //  J0=GHASH(nonce);
+      // J0=GHASH(nonce);
     }
 }
 int main(int argc, char *argv[])
 {
     
+    GHASH(text,448/8,H,ans);
 
+    for(int i=0;i<16;i++)
+    {
+        printf("%02x ",ans[i]);
+    }
+    printf("\n");
+    printf("\n");
+    mul(key,in,out);
+    for(int i=0;i<16;i++)
+    {
+        printf("%02x ",out[i]);
+    }
+    printf("\n");
     keygen(key,round_key);
     AES_enc(round_key,in,out);
     for(int i=0;i<16;i++)
