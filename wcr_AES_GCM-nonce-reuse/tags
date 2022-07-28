@@ -1,0 +1,39 @@
+!_TAG_FILE_FORMAT	2	/extended format; --format=1 will not append ;" to lines/
+!_TAG_FILE_SORTED	1	/0=unsorted, 1=sorted, 2=foldcase/
+!_TAG_PROGRAM_AUTHOR	Darren Hiebert	/dhiebert@users.sourceforge.net/
+!_TAG_PROGRAM_NAME	Exuberant Ctags	//
+!_TAG_PROGRAM_URL	http://ctags.sourceforge.net	/official site/
+!_TAG_PROGRAM_VERSION	5.8	//
+AES_GCM	AES_GCM.c	/^void AES_GCM(unsigned char key,$/;"	f	signature:(unsigned char key, unsigned char *AAD,int AADlen, unsigned char* plaintext,int textlen, unsigned char *tag,int taglen, unsigned char *nonce,int noncelen,unsigned char* ciphertext)
+AES_dec	AES_GCM.c	/^void AES_dec(unsigned char round_key[11][16],$/;"	f	signature:(unsigned char round_key[11][16], unsigned char ciphertext[16], unsigned char plaintext[16])
+AES_enc	AES_GCM.c	/^void AES_enc(unsigned char round_key[11][16],$/;"	f	signature:(unsigned char round_key[11][16], unsigned char plaintext[16], unsigned char ciphertext[16])
+D	AES_GCM.c	55;"	d	file:
+GCTR	AES_GCM.c	/^void GCTR(unsigned char key[16],int byteslen,unsigned char nonce[16],$/;"	f	signature:(unsigned char key[16],int byteslen,unsigned char nonce[16], unsigned char* plaintext,unsigned char* ciphertext)
+GHASH	AES_GCM.c	/^void GHASH(unsigned char *text,int len,unsigned char H[16],unsigned char ans[16])$/;"	f	signature:(unsigned char *text,int len,unsigned char H[16],unsigned char ans[16])
+GHASH1	AES_GCM.c	/^void GHASH1(unsigned char *text,int len,unsigned char H[16],unsigned char ans[16])$/;"	f	signature:(unsigned char *text,int len,unsigned char H[16],unsigned char ans[16])
+Gmul	AES_GCM.c	/^void Gmul(unsigned char *a,unsigned char* b,unsigned char* c)$/;"	f	signature:(unsigned char *a,unsigned char* b,unsigned char* c)
+H	AES_GCM.c	/^    unsigned char H[16]={$/;"	v
+H1	AES_GCM.c	/^unsigned char H1[16]={  0x00,0xBA,0x5F,0x76,$/;"	v
+IS	AES_GCM.c	/^unsigned char IS[256] =  {                \/\/ S盒的逆$/;"	v
+InvShiftRows	AES_GCM.c	/^void InvShiftRows( unsigned char *b )     {      $/;"	f	signature:( unsigned char *b )
+Mul9	AES_GCM.c	59;"	d	file:
+MulB	AES_GCM.c	57;"	d	file:
+MulD	AES_GCM.c	58;"	d	file:
+MulE	AES_GCM.c	56;"	d	file:
+POLYVAL	AES_GCM.c	/^void POLYVAL(unsigned char *text,int len,unsigned char H[16],unsigned char ans[16])$/;"	f	signature:(unsigned char *text,int len,unsigned char H[16],unsigned char ans[16])
+Pmul	AES_GCM.c	/^void Pmul(unsigned char *a,unsigned char* b,unsigned char* c)$/;"	f	signature:(unsigned char *a,unsigned char* b,unsigned char* c)
+S	AES_GCM.c	/^unsigned char S[256] = {             \/\/ S盒$/;"	v
+ShiftRows	AES_GCM.c	/^void ShiftRows( unsigned char *b )     {  $/;"	f	signature:( unsigned char *b )
+ans	AES_GCM.c	/^unsigned char ans[16]={0x38,0x4C,0x3C,0xED,$/;"	v
+cons	AES_GCM.c	/^unsigned char cons[16]={1,0,0,0,0,0,0,0,0,0,0,0,0,0,0x4,0x92};$/;"	v
+dot	AES_GCM.c	/^void dot(unsigned char *a,unsigned char* b,unsigned char* c)$/;"	f	signature:(unsigned char *a,unsigned char* b,unsigned char* c)
+in	AES_GCM.c	/^    unsigned char in[16]={0x40,0x0,0x0,0x0,0x0,0x0,0x0,0x0,0x0,0x0,0x0,0x0,0x0,0x0,0x0,0x0};$/;"	v
+inc32	AES_GCM.c	/^void inc32(unsigned char *a)$/;"	f	signature:(unsigned char *a)
+key	AES_GCM.c	/^    unsigned char key[16]={0x9c,0x98,0xc0,0x4d,0xf9,0x38,0x7d,0xed,0x82,0x81,0x75,0xa9,0x2b,0xa6,0x52,0xd8};$/;"	v
+keygen	AES_GCM.c	/^void keygen(unsigned char key[16],unsigned char round_key[11][16]){$/;"	f	signature:(unsigned char key[16],unsigned char round_key[11][16])
+main	AES_GCM.c	/^int main(int argc, char *argv[])$/;"	f	signature:(int argc, char *argv[])
+out	AES_GCM.c	/^    unsigned char out[16]={0};$/;"	v
+rev	AES_GCM.c	/^unsigned char rev(unsigned char a)$/;"	f	signature:(unsigned char a)
+round_key	AES_GCM.c	/^unsigned char  round_key[11][16];$/;"	v
+text	AES_GCM.c	/^unsigned char text[32]={$/;"	v
+text1	AES_GCM.c	/^unsigned char text1[448\/8]={               $/;"	v
