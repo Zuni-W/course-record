@@ -213,6 +213,12 @@ void inc32(unsigned char *a)
 void GCTR(unsigned char key[16],int byteslen,unsigned char nonce[16],
         unsigned char* plaintext,unsigned char* ciphertext)
 {
+    unsigned char p[byteslen];
+    for(int i=0;i<byteslen;i++)
+    {
+        p[i]=plaintext[i];
+    }
+    unsigned char round_key[11][16];
     keygen(key,round_key );
     for(int i=0;i<byteslen;i+=16)
     {
@@ -220,7 +226,7 @@ void GCTR(unsigned char key[16],int byteslen,unsigned char nonce[16],
         *(unsigned int*)nonce+=1;//inc32(nonce);
         for(int j=i;j<byteslen;j++)
         {
-            ciphertext[j]^=plaintext[j];
+            ciphertext[j]^=p[j];
         }
     }
 
@@ -228,16 +234,26 @@ void GCTR(unsigned char key[16],int byteslen,unsigned char nonce[16],
 void GCTR_SIV(unsigned char key[16],int byteslen,unsigned char nonce[16],
         unsigned char* plaintext,unsigned char* ciphertext)
 {
+    unsigned char round_key[11][16];
     keygen(key,round_key );
     unsigned char bitskey[16]={0};
+    printf("nonce:");
+    for(int i=0;i<16;i++)
+    {
+        printf("%02x ",nonce[i]);
+    }
+    printf("\n");
     for(int i=0;i<byteslen;i+=16)
     {
         AES_enc(round_key,nonce,bitskey);
         *(unsigned int*)nonce+=1;//inc32(nonce);
+        printf("keybits: ");
         for(int j=0;i+j<byteslen&&j<16;j++)
         {
             ciphertext[i+j]=bitskey[j]^plaintext[i+j];
+            printf("%02x ",bitskey[j]);
         }
+        printf("\n");
     }
 
 }
@@ -355,12 +371,12 @@ unsigned char rev(unsigned char a)
 }
 void GHASH1(unsigned char *text,int len,unsigned char H[16],unsigned char ans[16])
 {
-   //bd9b3997046731fb96251b91f9c99d7a
-   unsigned char H1[16];
-   for(int i=0;i<16;i++)
-   {
-       H1[i]=(H[i]);ans[i]=0;
-   }
+    //bd9b3997046731fb96251b91f9c99d7a
+    unsigned char H1[16];
+    for(int i=0;i<16;i++)
+    {
+        H1[i]=(H[i]);ans[i]=0;
+    }
  
     for(int i=0;i<len;i+=16)
     {
@@ -373,12 +389,12 @@ void GHASH1(unsigned char *text,int len,unsigned char H[16],unsigned char ans[16
 }
 void GHASH(unsigned char *text,int len,unsigned char H[16],unsigned char ans[16])
 {
-   //bd9b3997046731fb96251b91f9c99d7a
-   unsigned char H1[16];
-   for(int i=0;i<16;i++)
-   {
-       H1[i]=(H[15-i]);ans[i]=0;
-   }
+    //bd9b3997046731fb96251b91f9c99d7a
+    unsigned char H1[16];
+    for(int i=0;i<16;i++)
+    {
+        H1[i]=(H[15-i]);ans[i]=0;
+    }
     unsigned char in[16]={0x2,0x0,0x0,0x0,0x0,0x0,0x0,0x0,0x0,0x0,0x0,0x0,0x0,0x0,0x0,0x0};
     Pmul(H1,in,H1); 
     for(int i=0;i<len;i+=16)
@@ -407,6 +423,56 @@ void POLYVAL(unsigned char *text,int len,unsigned char H[16],unsigned char ans[1
         }
         dot(ans,H,ans);
     }
+}
+void AES_GCM(unsigned char *key,
+             unsigned char *AAD,int AADlen,
+             unsigned char* plaintext,int textlen,
+             unsigned char *tag,int taglen,
+             unsigned char *nonce,int noncelen,unsigned char* ciphertext)
+{
+    unsigned char round_key[11][16];
+    keygen(key,round_key);
+    unsigned char J0[16]={0};
+    unsigned char H[16]={0};
+    if(noncelen==12)
+    {
+        J0[0]=0;
+        for(int i=0;i<noncelen;i++)
+        J0[i+4]=nonce[i];
+        
+    }
+    else
+    {
+        exit(0);
+       GHASH1(nonce,noncelen,H,J0);
+    }
+    AES_enc(round_key,H,H);
+    *(unsigned int*)J0 +=1;
+    unsigned char* c=(unsigned char*) calloc(
+            (AADlen)+(AADlen%16)+
+            (textlen)+(textlen%16)+16,sizeof(char));
+
+    int cs=AADlen+(((16-AADlen)%16)+16)%16;
+    int ls=cs+(textlen)+(((16-textlen)%16)+16)%16;
+    *(unsigned long long*)(c+ls)=AADlen*8;
+    *(unsigned long long*)(c+ls+8)=textlen*8;
+    for(int i=0;i<AADlen;i++)
+    {
+        c[i]=AAD[i];
+    }
+    GCTR(key,textlen,J0,plaintext,c+cs);
+    GHASH1(c,ls+16,H,tag);
+    for(int i=0;i<4;i++)
+    {
+        J0[i]=0;
+    }
+    GCTR(key,16,J0,tag,tag);
+    for(int i=0;i<textlen;i++)
+    {
+        ciphertext[i]=c[i+cs];
+    }
+    free(c);
+    return;
 }
 
 void AES_GCM_SIV(unsigned char *key,
@@ -487,8 +553,8 @@ unsigned char GCM_AAD[16]="example";
 unsigned char GCM_plaintext[16]={
 "Hello world"
 };
-unsigned char GCM_ciphertext[16]={
-
+unsigned char GCM_ciphertext[32]={
+0
 };
 unsigned char GCM_tag[16]={
 
@@ -499,7 +565,26 @@ unsigned char GCM_key1[16]={
 int main(int argc, char *argv[])
 {
     
-      AES_GCM_SIV(GCM_key,GCM_AAD,7,GCM_plaintext,11,GCM_tag,16,GCM_nonce,12,GCM_ciphertext);
+
+    AES_GCM(GCM_key,GCM_AAD,7,GCM_ciphertext,32,GCM_tag,16,GCM_nonce,12,GCM_key1);
+
+    printf("all zero:\n");
+    for(int i=0;i<32;i++)
+    {
+        printf("%02x ",GCM_key1[i]);
+       
+    }
+    printf("\n");
+    printf("\n");
+    for(int i=0;i<16;i++)
+    {
+        printf("%02x ",GCM_tag[i]);
+    }
+    printf("\n");
+    printf("being attacked:\n");
+ 
+
+    AES_GCM(GCM_key,GCM_AAD,7,GCM_plaintext,11,GCM_tag,16,GCM_nonce,12,GCM_ciphertext);
 
     for(int i=0;i<11;i++)
     {
@@ -513,6 +598,17 @@ int main(int argc, char *argv[])
     }
     printf("\n");
     printf("\n");
+
+    printf("the secret is\n");
+    for(int i=0;i<11;i++)
+    {
+        printf("%02x ",GCM_key1[i]^GCM_ciphertext[i]);
+    }
+    printf("\n");
+    for(int i=0;i<11;i++)
+    {
+        printf("%c",GCM_key1[i]^GCM_ciphertext[i]);
+    }
 //    GHASH1(text,32,H,ans);
 //
 //    for(int i=0;i<16;i++)
