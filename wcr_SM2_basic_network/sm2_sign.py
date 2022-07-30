@@ -45,11 +45,14 @@ class point():
           else:
               self.y=gy
 
+    def __eq__(self,other):
+        return self.x==other.x and self.y==other.y
+
     def __str__(self):
         return str((self.x,self.y))
 
     def bytes(self):
-        return long_to_bytes(self.x)[2:].rjust(32,b"\0")+long_to_bytes(self.y)[2:].rjust(32,b"\0")
+        return long_to_bytes(self.x)[:].rjust(32,b"\0")+long_to_bytes(self.y)[:].rjust(32,b"\0")
 
     def bytesxy(self):
         return long_to_bytes(self.x)[2:].rjust(32,b"\0"),long_to_bytes(self.y)[2:].rjust(32,b"\0")
@@ -62,9 +65,13 @@ class ECC():
         self.b=b
         self.G=G
         assert(self.p%4==3)
-        assert(((self.G.x**3*self.a+self.b)%p)!=((self.G.y**2)%p))
-        assert((4*self.a**3+27*self.b**2)%p!=0)
-            
+        assert(((self.G.x**3+self.G.x*self.a+self.b)%self.p)==((self.G.y**2)%self.p))
+        assert((4*self.a**3+27*self.b**2)%self.p!=0)
+
+    def check(self,G):
+        assert(((G.x**3+G.x*self.a+self.b)%self.p)==((G.y**2)%self.p))
+
+
     def add_point(self,G1,G2):
         if G1.x==G2.x and G1.y!=G2.y:
             return point(0,0)
@@ -77,25 +84,25 @@ class ECC():
         else:
             t=(((G1.y-G2.y)%self.p)*inv((G1.x-G2.x)%self.p,self.p))%self.p
         Px=(t**2 - G1.x - G2.x)%self.p
-        Py=((t*(Px-G1.x)%self.p) + G1.y)%self.p
+        Py=((t*(G1.x-Px)%self.p) - G1.y)%self.p
         return point(Px,Py)
 
-    def mul(self,k,G1):
+    def mul(self,k0,G1):
         tmp=G1
         ans=point(0,0)
-        while k!=0:
-            if k&1:
+        while k0!=0:
+            if k0&1!=0:
                 ans=self.add_point(ans,tmp)
             tmp=self.add_point(tmp,tmp)
-            k>>=1
+            k0>>=1
         return ans
 
     def getpoint(self):
         ans=point(0,0)
         while 1:
             x=randint(1,self.p)
-            if is_sqrt(x**3*self.a+self.b,self.p):
-                y=sqrt(x**3*self.a+self.b,self.p)
+            if is_sqrt(x**3+x*self.a+self.b,self.p):
+                y=sqrt(x**3+x*self.a+self.b,self.p)
                 ans=point(x,choice([y,self.p-y]))
                 break
         return ans
@@ -114,34 +121,36 @@ def KDF(Z,klen):
     return ans[:klen]
 
 
+def Z(E,ID,Q):
+    if type(ID)==str:
+        ID=ID.encode()
+    return SHA256(long_to_bytes(len(ID)*8).rjust(2,b"\0")+ID+long_to_bytes(E.a).rjust(32,b"\0")+long_to_bytes(E.b).rjust(32,b"\0")+E.G.bytes()+Q.bytes())
 
-
-def enc(E,P,M):
+def sign(E,q,Z,M):
+    M1=Z+M
+    e=bytes_to_long(SHA256(M1))
     k=randint(1,E.p)
-    K=E.mul(k,G)
-    T=E.mul(k,P)
-    t=KDF(T.bytes(),len(M))
-    print("Te=",T)
-    C1=K.bytes()
-    x,y=T.bytesxy()
-    C2=long_to_bytes(bytes_to_long(M)^bytes_to_long(t))
-    C3=SHA256(x+M+y)
-    print(len(C1),len(C3),len(C2))
-    return C1+C3+C2
+    x1=E.mul(k,E.G).x
+    r=(e+x1)%E.n
+    assert(r!=0)
+    assert(r+k!=E.n)
+    s=((k-r*q)*inv(1+q,E.n))%E.n
+    assert(s!=0)
+    return long_to_bytes(r).rjust(32,b"\0")+long_to_bytes(s).rjust(32,b"\0")
 
-def dec(E,p,C):
-    C1=point(C[:64])
-    T=E.mul(p,C1)
-    print("Td=",T)
-    x,y=T.bytesxy()
-    C2=C[96:]
-    t=KDF(T.bytes(),len(C2))
-    M=long_to_bytes(bytes_to_long(C2)^bytes_to_long(t))
-    C3=C[64:96]
-    if C3==SHA256(x+M+y):
-        return M
-    else:
-        return M,False
+def verify(E,Q,Z,M,S):
+    r,s=S[:len(S)//2],S[len(S)//2:]
+    e=bytes_to_long(SHA256(Z+M))
+    r=bytes_to_long(r)
+    s=bytes_to_long(s)
+    t=(s+r)%E.n
+    assert(t!=0)
+    x1=E.add_point(E.mul(s,E.G),E.mul(t,Q)).x
+    return ((e+x1)%E.n)==(r%E.n)
+    
+
+
+
 
     
 ecc_table = {
@@ -154,28 +163,22 @@ ecc_table = {
 }
 
 from random import *
-p=76378969068931967799978474986766221990195196883902396962141933583233975423080497408612873676639599949087196270513177091766530920286751691355274210037883596945354343241483621638527665435513272920826625775623533645788020958166178854459822916501700693453991326875863601433303691721133941166754006135547142608019
-a=randint(1,p)
-print(pow(a,p-2,p)==inv(a,p))
-
-print(ecc_table["g"])
 G=point(ecc_table["g"])
+E=ECC(p=int(ecc_table["p"],16),n=int(ecc_table["n"],16),a=int(ecc_table["a"],16),b=int(ecc_table["b"],16),G=G)
 
-E=ECC(int(ecc_table["p"],16),int(ecc_table["n"],16),int(ecc_table["a"],16),int(ecc_table["b"],16),G)
 
-print(E.getpoint())
-
-q=randint(1,E.p)
-Q=E.mul(q,E.G)
 
 M=b"helloworld"
+q=randint(1,E.p)
+Q=E.mul(q,G)
 
+ID=b"Zuni-W"
+myZ=Z(E,ID,Q)
 
-C=enc(E,Q,M)
+S=sign(E,q,myZ,M)
 
-print(C)
-print(len(C))
+print(S)
 
-M1=dec(E,q,C)
+ans=verify(E,Q,myZ,M,S)
 
-print(M1)
+print(ans)

@@ -7,7 +7,7 @@ from secrets import *
 
 
 if __name__ == "__main__":
-    value = 10000
+    value = 1000
     source_pair = {'privkey': wif2privkey(source_wif), 'wif': source_wif}
     source_pair['pubkey'] = get_pubkey(source_pair['privkey'])
     source_pair['address'] = pubkey2address(source_pair['pubkey'])

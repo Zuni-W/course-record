@@ -23,7 +23,7 @@ t=0
 flag=""
 for k in range(1,17):
     for i in range(128):
-        if call(["/home/zuni-w/Desktop/enc_oracle",hex(bytes_to_long(flag.encode())^int(a[t:t+32],16)^int((hex(i)[2:].zfill(2)+(hex(k)[2:].zfill(2))*(k-1)),16))[2:].zfill(32)+a[t+32:t+64] ])==200:
+        if call(["./dec_oracle",hex(bytes_to_long(flag.encode())^int(a[t:t+32],16)^int((hex(i)[2:].zfill(2)+(hex(k)[2:].zfill(2))*(k-1)),16))[2:].zfill(32)+a[t+32:t+64] ])==200:
             flag=chr(i^k)+flag
 
 print(flag+flag2+flag3)
