@@ -11,6 +11,7 @@ n  = FFFFFFFE FFFFFFFF FFFFFFFF FFFFFFFF 7203DF6B 21C6052B 53BBF409 39D54123
 Gx = 32C4AE2C 1F198119 5F990446 6A39C994 8FE30BBF F2660BE1 715A4589 334C74C7
 Gy = BC3736A2 F4F6779C 59BDCEE3 6B692153 D0A9877C C62A4740 02DF32E5 2139F0A0
 """
+import Curve
 from Curve import *
 from random import randint
 from math import gcd,ceil,log2,floor
@@ -156,10 +157,10 @@ class SM2:
         self.b = 0x28E9FA9E9D9F5E344D5A9E4BCF6509A7F39789F515AB8F92DDBCBD414D940E93
         self.p = 0xFFFFFFFEFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF00000000FFFFFFFFFFFFFFFF
         self.q = 0xFFFFFFFEFFFFFFFFFFFFFFFFFFFFFFFF7203DF6B21C6052B53BBF40939D54123
-        gx = 0x32C4AE2C1F1981195F9904466A39C9948FE30BBFF2660BE1715A4589334C74C7
-        gy = 0xBC3736A2F4F6779C59BDCEE36B692153D0A9877CC62A474002DF32E52139F0A0
+        self.gx = 0x32C4AE2C1F1981195F9904466A39C9948FE30BBFF2660BE1715A4589334C74C7
+        self.gy = 0xBC3736A2F4F6779C59BDCEE36B692153D0A9877CC62A474002DF32E52139F0A0
         self.E = CurveFp(self.p, self.a, self.b)
-        self.G = Point(self.E, gx, gy)
+        self.G = Point(self.E, self.gx, self.gy)
     
     def gen_keys(self):
         """
@@ -234,12 +235,53 @@ class SM2:
             print("C3 have a error")
             return None
 
+    def sign(self,msg):
+        ZA = self.Hash(''.join([hex(i)[2:] for i in [self.a,self.b,self.gx,self.gy,self.pk.x,self.pk.y]]))
+        Mbar = ZA+msg.hex()[2:]
+        e = int(self.Hash(Mbar),base=16)
+        while(1):
+            k = randint(1, self.q - 1)
+            p1 = k * self.G
+            r = (e + p1.x) % self.q
+            if r == 0 or r + k == self.q:
+                continue
+            s = Curve.inv_mod(1+self.sk, self.q) * (k - r * self.sk) % self.q
+            if s == 0:
+                continue
+            break
+        return (r, s)
+
+    def verify(self,msg,r,s,pk):
+        if r < 1 or r > self.q:
+            return  False
+        if s < 1 or s > self.q:
+            return  False
+        pA = Point(self.E, int(pk[:64],base=16), int(pk[64:],base=16))
+        ZA = self.Hash(''.join([hex(i)[2:] for i in [self.a, self.b, self.gx, self.gy, pA.x, pA.y]]))
+        Mbar = ZA + msg.hex()[2:]
+        e = int(self.Hash(Mbar),base=16)
+        t = (r+s) % self.q
+        if t == 0:
+            return False
+        try:
+            p2 = s*self.G + t*pA
+        except:
+            return False
+        R = (e + p2.x) % self.q
+        if R == r:
+            return True
+        else:
+            return False
+
+
 if __name__ == "__main__":
     cipher = SM2()
     cipher.init_keys()
     pk=point2hex(cipher.pk)
     plaintext = 'a5'
-    secret = cipher.encrypt(plaintext,pk)
+    """secret = cipher.encrypt(plaintext,pk)
     plain = cipher.decrypt(secret)
     print(secret)
-    print(plain)
+    print(plain)"""
+    sign = cipher.sign(plaintext.encode())
+    print(cipher.verify(plaintext.encode(),sign[0],sign[1],pk))

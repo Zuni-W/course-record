@@ -81,7 +81,7 @@ def SM3(m):
     v = msg_compress(v,block[0])
     
     for i in block[1:]:
-        print(i)
+        #print(i)
         v = msg_compress(v,i)
     return v
     
@@ -89,4 +89,4 @@ def sm3hex(msg):
     msg = bin(msg)[2:].zfill(8)
     return ''.join([hex(i)[2:].zfill(8) for i in SM3(msg)])
 
-print(sm3hex(49))
+#print(sm3hex(49))
