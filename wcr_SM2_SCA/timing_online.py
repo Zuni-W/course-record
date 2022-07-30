@@ -1,9 +1,7 @@
-#!/usr/bin/env python3
+#!/usr/bin/python3 
 
 from time import perf_counter_ns as clock1
-
 from time import *
-from flag import flag,hint
 
 ecc_table = {
     'n': 'FFFFFFFEFFFFFFFFFFFFFFFFFFFFFFFF7203DF6B21C6052B53BBF40939D54123',
@@ -12,6 +10,8 @@ ecc_table = {
          'bc3736a2f4f6779c59bdcee36b692153d0a9877cc62a474002df32e52139f0a0',
     'a': 'FFFFFFFEFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF00000000FFFFFFFFFFFFFFFC',
     'b': '28E9FA9E9D9F5E344D5A9E4BCF6509A7F39789F515AB8F92DDBCBD414D940E93',
+    'O': '0000000000000000000000000000000000000000000000000000000000000000'
+         '0000000000000000000000000000000000000000000000000000000000000000',
 }
 
 class TSM2(object):
@@ -206,36 +206,78 @@ class TSM2(object):
             return self._double_point(P1)
         else :
             return self._convert_jacb_to_nor(self._add_point(P1,P2))
-
+import sys,os
 from random import *
-g=ecc_table["g"]
-t=[randint(1,254) for i in range(8)]
-adminsk=sum([1<<i for i in t])
+import socketserver
+import signal
+import string
 
-print("system reseting...")
-sm2 = TSM2(sk)
-userid=randint(2,1000)
-user=sm2.kg(userid,g)
-print("done")
-print("the system is",sm2.pk)
-print("you are",user)
 
-#print(bin(sk),len(bin(sk))-2)
-for i in range(100):
-    try:
-        t=int(input("plz give me your number:"))
-    except:
-        print("wrong, plz try again")
-        continue
-    if adminsk==t:
-        print(flag)
-        exit()
-    t1=clock1()
-    G=sm2.kg(sk-t,g)
-    t2=clock1()
-    print("used",(t2-t1)/1e9,"s")
-    if sm2.add_point(G,user)!=sm2.pk:
-        print("you can't check other's file!")
-    else :
-        print(hint)
+class Task(socketserver.BaseRequestHandler):
+    def _recvall(self):
+        BUFF_SIZE = 2048
+        data = b''
+        while True:
+            part = self.request.recv(BUFF_SIZE)
+            data += part
+            if len(part) < BUFF_SIZE:
+                break
+        return data.strip()
 
+    def send(self, msg, newline=True):
+        msg=msg.encode()
+        try:
+            if newline:
+                msg += b'\n'
+            self.request.sendall(msg)
+        except:
+            pass
+
+    def recv(self, prompt=b'[-] '):
+        self.send(prompt, newline=False)
+        return self._recvall()
+
+
+    def handle(self):
+        signal.alarm(3600)
+        g=ecc_table["g"]
+        O=ecc_table["O"]
+        t=[randint(1,254) for i in range(8)]
+        sk=sum([1<<i for i in t])
+        
+        self.send("system reseting...")
+        sm2 = TSM2(sk)
+        self.send("done")
+        self.send("the system is "+str(sm2.pk))
+        
+        for i in range(100):
+            try:
+                user=int(self.recv("plz give me your number:"))
+            except:
+                self.send("wrong, plz try again")
+                continue
+            t1=clock1()
+            kG=sm2.kg(sk-user,g)
+            t2=clock1()
+            self.send("used "+str((t2-t1)/1e9)+" s")
+            if kG==O:
+                f=open("./flag")
+                flag=f.read()
+                self.send(flag)
+                exit()
+            
+
+class ThreadedServer(socketserver.ThreadingMixIn, socketserver.TCPServer):
+    pass
+
+
+class ForkedServer(socketserver.ForkingMixIn, socketserver.TCPServer):
+    pass
+
+
+if __name__ == "__main__":
+    HOST, PORT = '0.0.0.0',8000
+    server = ForkedServer((HOST, PORT), Task)
+    server.allow_reuse_address = True
+    print(HOST, PORT)
+    server.serve_forever()
