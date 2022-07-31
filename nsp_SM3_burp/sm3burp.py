@@ -9,9 +9,10 @@ for i in range(2**19):
     p = Popen(' '.join(cmd),shell=True,stdout=PIPE)
     p.wait()
     output, unused_err = p.communicate()
-    output = output.decode()[-5:-1]
+    output = output.decode()[-9:-1]
     if output in outlist:
         count+=1
+        print(i,outlist.index(output))
         t2 = time.time()
         break
         #print(outlist.index(output))
