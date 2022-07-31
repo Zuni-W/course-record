@@ -86,7 +86,9 @@ def SM3(m):
     return v
     
 def sm3hex(msg):
-    msg = bin(msg)[2:].zfill(8)
+    #msg为二进制字符串
     return ''.join([hex(i)[2:].zfill(8) for i in SM3(msg)])
 
-#print(sm3hex(49))
+def sm3bin(msg):
+    #msg为二进制字符串
+    return ''.join([bin(i)[2:].zfill(32) for i in SM3(msg)])

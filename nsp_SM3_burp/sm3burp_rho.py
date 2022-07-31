@@ -3,6 +3,7 @@ import os
 import time
 import random
 from subprocess import *
+import SM3
 
 global n
 
@@ -14,14 +15,19 @@ def sm3(x):
     output=output.decode()[-65:-1]
     return output
 
-def f(a):
+def f_(a):
     global n
     return int(sm3(a)[:n//4],base=16)
+
+def f(a):
+    global n
+    return int(SM3.sm3hex(a)[:n//4],base=16)
 
 def rho_method(x):
     x1 = x
     x2 = f(x)
     chain = [x1]
+    t3 = time.time()
     while(f(x1) != f(x2)):
         x1 = f(x1)
         chain.append(x1)
@@ -49,6 +55,7 @@ def get_collsion(length):
             a.append(f(x))
             enter = a.index(a[-1])
             print(a[enter-1],a[-2])
+            print(SM3.sm3hex(a[enter-1]),SM3.sm3hex(a[-2]))
             break
     t2 = time.time()
     print(t2-t1)
