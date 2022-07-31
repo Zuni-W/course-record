@@ -47,6 +47,7 @@ if __name__ == "__main__":
     B = PGP()
     bPk = '%064x%064x' % (int(B.pk.x), int(B.pk.y))
     aPk = '%064x%064x' % (int(A.pk.x), int(A.pk.y))
-    email = "ToDifficult"
-    t = A.send(email, bPk)
-    print(B.recv(t, aPk))
+    email = "ToDifficult" #模拟发送的邮件
+    t = A.send(email, bPk)# t为A发送的数据流
+    print(t) #打印数据流
+    print(B.recv(t, aPk))# B解析并解密数据

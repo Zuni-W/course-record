@@ -279,9 +279,10 @@ if __name__ == "__main__":
     cipher.init_keys()
     pk=point2hex(cipher.pk)
     plaintext = 'a5'
-    """secret = cipher.encrypt(plaintext,pk)
+    secret = cipher.encrypt(plaintext,pk)
     plain = cipher.decrypt(secret)
     print(secret)
-    print(plain)"""
-    sign = cipher.sign(plaintext.encode())
-    print(cipher.verify(plaintext.encode(),sign[0],sign[1],pk))
+    print(plain)
+"""    sign = cipher.sign(plaintext.encode())
+    print(sign)
+    print(cipher.verify(plaintext.encode(),sign[0],sign[1],pk))"""
